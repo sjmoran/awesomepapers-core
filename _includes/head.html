@@ -1,0 +1,285 @@
+<!-- _includes/head.html -->
+<head>
+  {% if site.services.ardalio_id %}
+  <!-- begin code v 7.0 -->
+  <span id="wts{{ site.services.ardalio_id }}"></span>
+  <script>
+    var wts7 = {};
+    wts7.invisible='';
+    wts7.page_name='';
+    wts7.group_name='';
+    wts7.conversion_number='';
+    wts7.user_id='';
+    var wts=document.createElement('script');wts.async=true;
+    wts.src='https://app.ardalio.com/wts7.js';document.head.appendChild(wts);
+    wts.onload = function(){ wtsl7({{ site.services.ardalio_id }},2); };
+  </script>
+  <noscript><img src="https://app.ardalio.com/7/2/{{ site.services.ardalio_id }}.png" alt=""></noscript>
+  <!-- end code v 7.0 -->
+  {% endif %}
+
+  {% if site.features.mathjax_enabled != false %}
+  <!-- MathJax -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      options: {
+        // Only process elements with this class:
+        processHtmlClass: 'mathjax-content',
+        // And explicitly skip anything marked as no-mathjax
+        ignoreHtmlClass: 'no-mathjax'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  {% endif %}
+
+  <link href="https://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="utf-8">
+
+  <!-- Viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ✅ Manual SEO keywords (Google ignores, but some engines use) -->
+  <meta name="keywords" content="{{ site.domain.keywords | join: ', ' }}">
+
+  <!-- ✅ Jekyll SEO plugin (title, description, OG/Twitter, JSON-LD) -->
+  {% seo %}
+
+  <!-- Performance preconnects -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.datatables.net" crossorigin>
+  <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+
+  <!-- Site CSS -->
+  <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/poole.css">
+  <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/syntax.css">
+  <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/hyde.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  <!-- Icons -->
+  <link rel="shortcut icon" href="{{ site.baseurl }}{{ site.favicon | default: '/public/favicon.ico' }}">
+  <link rel="search" href="{{ site.baseurl }}/public/opensearchdescription.xml" type="application/opensearchdescription+xml" title="{{ site.short_title | default: site.title }}" />
+
+  <!-- Site configuration for JavaScript (must load before other scripts) -->
+  <script src="{{ site.baseurl }}/assets/js/site-config.js"></script>
+
+  <!-- ✅ Single, modern jQuery + DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js" defer></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js" defer></script>
+
+  <!-- Optional sanity log -->
+  <script defer>
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('jQuery:', jQuery?.fn?.jquery);
+      console.log('DataTables loaded:', !!jQuery?.fn?.dataTable);
+    });
+  </script>
+
+  {% if site.services.google_ads_id %}
+  <!-- ✅ Google Ads global site tag -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.services.google_ads_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', '{{ site.services.google_ads_id }}'); // Google Ads account ID
+  </script>
+  {% endif %}
+
+  <!-- Theme variables from config -->
+  <style>
+    :root {
+      --brand-color: {{ site.theme.brand_color | default: '#1a73e8' }};
+      --brand-color-hover: {{ site.theme.brand_color_hover | default: '#1557b0' }};
+      --accent-color: {{ site.theme.accent_color | default: '#3b82f6' }};
+      --chat-accent: {{ site.theme.chat_accent | default: '#0c5fce' }};
+      --sidebar-bg: {{ site.theme.sidebar_bg | default: '#7da2b3' }};
+    }
+  </style>
+
+  {% if site.features.chat_enabled != false %}
+  <!-- 🔹 Floating Chat CSS (compact popup: scrollable, smaller controls, no examples) -->
+  <style id="alp-chat-css">
+    .chat-launcher{
+      position: fixed; right: 20px; bottom: 20px;
+      width: 56px; height: 56px; border-radius: 999px;
+      border: none; cursor: pointer; font-size: 24px; line-height: 56px;
+      background: var(--chat-accent); color: #fff; box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      z-index: 2147483000;
+    }
+
+    .chat-widget{
+      position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom));
+      width: min(420px, 92vw); height: min(70vh, 720px);
+      background: #fff; border: 1px solid #e6e6e6; border-radius: 12px;
+      box-shadow: 0 24px 48px rgba(0,0,0,.22);
+      display: flex; flex-direction: column; overflow: hidden;
+      transform: translateY(16px) scale(.98); opacity: 0; pointer-events: none;
+      transition: transform .18s ease, opacity .18s ease;
+      z-index: 2147483640;
+    }
+    .chat-widget.open{ transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+
+    .chat-widget__header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 10px; border-bottom:1px solid #eee; background:#fafafa;
+    }
+    .chat-close{ border:0; background:transparent; font-size:18px; cursor:pointer; line-height:1; }
+    .chat-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.32); z-index:2147483630; display:none; }
+
+    /* Body fills the widget */
+    .chat-widget__body{ display:flex; flex-direction:column; height:100%; min-height:0; }
+
+    /* Inner chatbox uses available height and scrolls */
+    .chat-widget .chatbox{
+      border:0; border-radius:0; height:100%;
+      display:flex; flex-direction:column; min-height:0; background:#fff;
+    }
+    .chat-widget .messages{
+      flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      padding:10px; border-bottom:1px solid #e0e0e0;
+      overflow-wrap:anywhere; word-break:break-word;
+    }
+
+    /* Compact input row + smaller buttons */
+    .chat-widget .input-area{
+      position: sticky; bottom: 0; left: 0; right: 0;
+      display: flex; gap: .5rem; align-items: center;
+      padding: .5rem calc(.5rem + env(safe-area-inset-right))
+               calc(.5rem + env(safe-area-inset-bottom))
+               calc(.5rem + env(safe-area-inset-left));
+      border-top: 1px solid #e0e0e0; background: #fafafa; z-index: 2;
+    }
+    .chat-widget .chat-input{
+      flex: 1; min-width: 0;
+      padding: .5rem .6rem;
+      font-size: 15px; /* avoids iOS zoom while saving space */
+      line-height: 1.3;
+      height: 40px;
+      border: 1px solid #aaa; border-radius: 6px; background-color: #f8f9fa;
+    }
+    .chat-widget .chat-input:focus{
+      border-color: var(--chat-accent); box-shadow: 0 0 0 2px rgba(26,115,232,.16); outline: none;
+    }
+    .chat-widget .btn-row{ display:flex; gap:.4rem; align-items:center; flex-wrap:wrap; }
+    .chat-widget .send-button, .chat-widget .stop-button{
+      padding: .35rem .6rem; font-size: 14px; border: 1px solid #aaa; border-radius: 6px;
+      background: #f8f9fa; cursor: pointer; white-space: nowrap;
+    }
+    .chat-widget .send-button:hover, .chat-widget .stop-button:hover{ background:#e9e9e9; }
+    .chat-widget .stop-button{ border-color:#c66; }
+
+    /* Bubbles */
+    .chat-widget .message{ padding:10px; margin-bottom:10px; border-radius:10px; max-width: 100%; }
+    .chat-widget .user{ align-self:flex-end; background:#eef5ff; text-align:right; }
+    .chat-widget .bot{  align-self:flex-start; background:#f4f8f4; text-align:left; }
+    .chat-widget .muted{ color:#666; font-size:.9rem; }
+
+    /* Spinner */
+    .chat-widget .spinner{
+      display:inline-block; width:22px; height:22px;
+      border:3px solid rgba(0,0,0,0.2); border-top:3px solid var(--chat-accent);
+      border-radius:50%; animation: spin 1s linear infinite; vertical-align:middle; margin-right:8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Hide example queries list defensively if present */
+    #popular-queries-list{ display:none !important; }
+
+    @media (max-width: 640px){
+      .chat-widget{ right:0; bottom:0; width:100vw; height:100svh; border-radius:0; }
+    }
+  </style>
+
+  <!-- 🔹 Load the popup chat script -->
+  <script src="{{ site.baseurl }}/assets/js/alp-chat.js" defer></script>
+
+  <!-- 🔹 Minimal bootstrap to insert launcher + widget and mount ALPChat -->
+  <script defer>
+    document.addEventListener('DOMContentLoaded', function(){
+      // Avoid duplicate insertion
+      if (document.querySelector('.chat-launcher')) return;
+
+      // Launcher button
+      const btn = document.createElement('button');
+      btn.className = 'chat-launcher';
+      btn.type = 'button';
+      btn.title = '{{ site.content.chat.launcher_tooltip | default: "Chat about papers" }}';
+      btn.setAttribute('aria-label', 'Open chat');
+      btn.textContent = '💬';
+      document.body.appendChild(btn);
+
+      // Backdrop
+      const backdrop = document.createElement('div');
+      backdrop.className = 'chat-backdrop';
+      backdrop.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(backdrop);
+
+      // Widget container
+      const widget = document.createElement('div');
+      widget.className = 'chat-widget';
+      widget.setAttribute('role', 'dialog');
+      widget.setAttribute('aria-modal', 'true');
+      widget.setAttribute('aria-label', '{{ site.content.chat.title | default: "Paper Search Chat" }}');
+      widget.innerHTML = `
+        <div class="chat-widget__header">
+          <strong>{{ site.content.chat.subtitle | default: "Ask about papers" }}</strong>
+          <button class="chat-close" aria-label="Close">✕</button>
+        </div>
+        <div class="chat-widget__body">
+          <div id="alp-chat-root"></div>
+        </div>
+      `;
+      document.body.appendChild(widget);
+
+      const closeBtn = widget.querySelector('.chat-close');
+      const open = () => {
+        widget.classList.add('open');
+        backdrop.style.display = 'block';
+        // Focus input after mount
+        setTimeout(() => document.querySelector('#alp-chat-root input#query')?.focus(), 120);
+      };
+      const close = () => {
+        widget.classList.remove('open');
+        backdrop.style.display = 'none';
+      };
+
+      btn.addEventListener('click', open);
+      closeBtn.addEventListener('click', close);
+      backdrop.addEventListener('click', close);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && widget.classList.contains('open')) close();
+      });
+
+      // Mount chat once, on first open (keeps page light)
+      let mounted = false;
+      const ensureMount = () => {
+        if (mounted) return;
+        if (window.ALPChat && typeof window.ALPChat.mount === 'function') {
+          window.ALPChat.mount(document.getElementById('alp-chat-root'));
+          mounted = true;
+        }
+      };
+      btn.addEventListener('click', ensureMount, { once: true });
+
+      // Also attempt mount when script finishes loading (in case user opens very fast)
+      if (window.ALPChat) {
+        // already loaded
+      } else {
+        window.addEventListener('load', () => {
+          // no-op here; first click will mount
+        });
+      }
+    });
+  </script>
+  {% endif %}
+</head>

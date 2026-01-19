@@ -1,0 +1,41 @@
+# Default configuration values for Awesome Papers sites
+# These can be overridden in each site's _config.yml
+
+features:
+  chat_enabled: true
+  viz_enabled: true
+  digest_enabled: true
+  search_enabled: true
+  rss_enabled: true
+  mathjax_enabled: true
+  new_badge_days: 7
+
+theme:
+  hyde_theme: '0d'
+  layout: 'layout-reverse'
+  brand_color: '#1a73e8'
+  brand_color_hover: '#1557b0'
+  accent_color: '#3b82f6'
+  sidebar_bg: '#7da2b3'
+  chat_accent: '#0c5fce'
+
+content:
+  nav:
+    all_papers: 'All Papers'
+    papers_by_tag: 'Papers by Tag'
+    paper_map: '2D Map of Papers'
+    topic_explorer: 'Topic Explorer'
+    tools_explorer: 'Tools Explorer'
+    blog_explorer: 'Blog & Book Explorer'
+    author_explorer: 'Author Explorer'
+    agentic_search: 'Agentic Search'
+    digest: '📬 Subscribe to E-Mail Digest'
+    rss_feed: '📰 RSS Feed'
+  search_placeholder: 'Search related work'
+  footer:
+    contact_text: 'Contact us about this survey or website.'
+  chat:
+    title: 'Paper Search Chat'
+    subtitle: 'Ask about papers'
+    placeholder: 'Ask about papers…'
+    launcher_tooltip: 'Chat about papers'
