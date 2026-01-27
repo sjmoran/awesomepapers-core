@@ -1,0 +1,111 @@
+# =============================================================================
+# DEFAULT CONFIGURATION VALUES
+# =============================================================================
+# These are the default values used when sites don't specify their own.
+# Sites can override any of these in their _config.yml.
+# =============================================================================
+
+# Default domain settings
+domain:
+  name: 'Research Papers'
+  short_name: 'Papers'
+  paper_term: 'papers'
+  paper_term_singular: 'paper'
+  keywords: []
+  hero_image: ''
+  hero_alt: 'Research visualization'
+  hero_caption: ''
+  about_text: >
+    This site is an open-access scholarly resource and an evolving index 
+    of research papers.
+
+# Default theme settings
+theme:
+  hyde_theme: '0d'
+  layout: 'layout-reverse'
+  brand_color: '#1a73e8'
+  brand_color_hover: '#1557b0'
+  accent_color: '#3b82f6'
+  sidebar_bg: '#7da2b3'
+  chat_accent: '#0c5fce'
+
+# Default content strings
+content:
+  ribbon_text: 'Submit a Paper'
+  ribbon_link: '/contributing.html'
+  search_placeholder: 'Search papers'
+  
+  nav:
+    all_papers: 'All Papers'
+    papers_by_tag: 'Papers by Tag'
+    paper_map: '2D Map of Papers'
+    topic_explorer: 'Topic Explorer'
+    tools_explorer: 'Tools Explorer'
+    blog_explorer: 'Blog & Book Explorer'
+    author_explorer: 'Author Explorer'
+    agentic_search: 'Agentic Search'
+    digest: '📬 Subscribe to Digest'
+    rss_feed: '📰 RSS Feed'
+  
+  digest:
+    name: 'Research Digest'
+    description: 'Weekly research highlights delivered to your inbox.'
+    tagline: 'Stay current with the latest research.'
+  
+  chat:
+    title: 'Paper Search Chat'
+    subtitle: 'Ask about papers'
+    launcher_tooltip: 'Chat about papers'
+    placeholder: 'Ask about papers… (Enter to send)'
+    bot_name: 'Papers AI Agent'
+    example_queries:
+      - 'recent papers on topic X'
+      - 'papers by author Y'
+      - 'tag:example'
+  
+  contributing:
+    heading: 'Submit a Paper'
+    intro: >
+      Help us build a comprehensive research collection. 
+      Submit papers via the form below.
+  
+  footer:
+    copyright_holder: 'Site Maintainer'
+    copyright_url: '#'
+    contact_text: 'Contact us about this collection.'
+  
+  landing:
+    heading: 'Research Papers'
+    subheading: 'A curated collection of scholarly research.'
+    cta_text: 'Subscribe Free'
+    cta_description: 'Get weekly research highlights.'
+
+# Default feature flags
+features:
+  chat_enabled: true
+  viz_enabled: true
+  digest_enabled: true
+  contributing_enabled: true
+  rss_enabled: true
+  search_enabled: true
+  mathjax_enabled: true
+  new_badge_days: 7
+
+# Default author
+author:
+  name: 'Site Maintainer'
+  url: ''
+  email: ''
+  twitter: ''
+  github: ''
+
+# Default services (empty - must be configured per site)
+services:
+  google_ads_id: ''
+  ardalio_id: ''
+  api:
+    base: ''
+    contribute: ''
+    chat: ''
+    subscribe: ''
+  support_url: ''

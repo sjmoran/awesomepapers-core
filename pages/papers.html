@@ -1,0 +1,683 @@
+---
+layout: default
+title: Search all Publications on {{ site.domain.name }}
+description: A list of research {{ site.domain.paper_term }} for {{ site.domain.name }}.
+---
+
+<h2 style="font-size: 1.8em; margin-bottom: 10px;">📚 Search Publications</h2>
+<p style="font-size: 1.05em;">
+  Search across all {{ site.domain.paper_term }} in this collection. Use the search bar to filter by
+  <strong>title</strong> and <strong>authors</strong>. Click a title to open the
+  {{ site.domain.paper_term_singular | default: 'paper' }}'s page. <strong class="badge-new">NEW</strong> marks {{ site.domain.paper_term }} ingested in
+  the past {{ site.features.new_badge_days | default: 7 }} days.
+</p>
+
+<!-- Slim Toolbar: search + visible count + sort -->
+<div id="papersToolbar" class="toolbar" style="display:none;">
+  <!-- Top row: search bar -->
+  <div class="search">
+    <label for="papersSearch"><strong>Search</strong></label>
+    <input id="papersSearch" type="search"
+           placeholder="🔍 Search title or authors…" inputmode="search" />
+    <button id="resetPapersSearch" type="button" aria-label="Clear search">
+      Clear
+    </button>
+  </div>
+
+  <!-- Second row: count (left) + sort (right) -->
+  <div class="toolbar-bottom">
+    <span id="papersVisibleCount" class="small" aria-live="polite"></span>
+
+    <div class="sort">
+      <label for="sortSelect"><strong>Sort</strong></label>
+      <select id="sortSelect">
+        <option value="default">Newest &amp; NEW first</option>
+        <option value="year_desc">Year ↓ (newest first)</option>
+        <option value="year_asc">Year ↑ (oldest first)</option>
+
+        <option value="cites_desc">Citations ↓ (most first)</option>
+        <option value="cites_asc">Citations ↑ (fewest first)</option>
+
+        <option value="hf_desc">Hugging Face likes ↓</option>
+        <option value="hf_asc">Hugging Face likes ↑</option>
+
+        <option value="gh_desc">GitHub stars ↓</option>
+        <option value="gh_asc">GitHub stars ↑</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loading" role="status" aria-live="polite">
+  <p id="loadingText">Loading publications…</p>
+</div>
+
+<!-- Cards View -->
+<div id="cardsGrid" class="cards" style="display:none;" aria-live="polite"></div>
+<p id="emptyState" class="empty" style="display:none;">No papers match your search.</p>
+
+<!-- Sentinel for progressive loading -->
+<div id="loadMoreTrigger" style="height: 1px;"></div>
+
+<!-- Hidden Data Table -->
+<table id="papers-table" class="display stripe hover" style="width:100%; display:none;">
+  <thead>
+    <tr>
+      <th>TitleHTML</th>
+      <th>ShortAuthors</th>
+      <th>Year</th>
+      <th>Citations</th>
+      <th>HFLikes</th>
+      <th>GitHubStars</th>
+      <th>RawSearch</th>
+      <th>AddedTS</th>
+      <th>IsNew</th>
+      <th>URL</th>
+      <th>AllAuthors</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<style>
+:root{
+  --bg:#ffffff;
+  --card:#fff;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --shadow:0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
+  --brand:{{ site.theme.brand_color | default: '#1a73e8' }};
+}
+
+/* Toolbar container */
+.toolbar{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background: linear-gradient(#fff, rgba(255,255,255,.92));
+  backdrop-filter: blur(4px);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  margin:8px 0 12px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+  box-shadow:var(--shadow);
+}
+
+/* Search (top row) */
+.search{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  flex-wrap:wrap;
+}
+.search label{
+  font-weight:700;
+  font-size:.85rem;
+}
+.search input{
+  flex:1 1 220px;
+  min-width:160px;
+  max-width:560px;
+  padding:.45rem .6rem;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  font-size:.95rem;
+  background-color:#f8fafc;
+}
+.search input:focus{
+  outline:none;
+  border-color:var(--brand);
+  box-shadow:0 0 0 2px rgba(26,115,232,.18);
+}
+.search button{
+  padding:.45rem .6rem;
+  font-size:.85rem;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  background:#f8fafc;
+  cursor:pointer;
+}
+.search button:hover{
+  background:#eef2f7;
+}
+
+/* Second row: count (left) + sort (right) */
+.toolbar-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:.6rem;
+}
+.small{
+  color:var(--muted);
+  font-size:.9em;
+}
+
+/* Sort block */
+.sort{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  font-size:.85rem;
+}
+.sort label{
+  font-weight:700;
+  font-size:.85rem;
+  color:#111827;
+}
+.sort select{
+  padding:.45rem .6rem;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  background:#f8fafc;
+  font-size:.95rem;
+  line-height:1.3;
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  cursor:pointer;
+
+  background-image:
+    linear-gradient(45deg, #9ca3af 50%, transparent 50%),
+    linear-gradient(135deg, #9ca3af 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%;
+  background-size:5px 5px;
+  background-repeat:no-repeat;
+  padding-right:1.7rem;
+}
+.sort select:hover{
+  background-color:#eef2f7;
+}
+.sort select:focus{
+  outline:none;
+  border-color:var(--brand);
+  box-shadow:0 0 0 2px rgba(26,115,232,.18);
+}
+
+/* Cards */
+.cards{
+  display:grid;
+  gap:14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.card{
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--card);
+  padding:14px;
+  box-shadow: var(--shadow);
+  transition: transform .06s ease;
+}
+.card:hover{
+  transform: translateY(-1px);
+}
+
+.meta{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+  color:var(--muted);
+  font-size:.9rem;
+  flex-wrap:wrap;
+}
+
+.signal{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:.12rem .42rem;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#f8fafc;
+  color:#374151;
+  font-size:.82rem;
+}
+
+.title a{
+  text-decoration:none;
+  color:#0f172a;
+}
+.title a:hover{
+  text-decoration:underline;
+}
+
+.badge-new{
+  display:inline-block;
+  font-size:.75rem;
+  padding:.2rem .45rem;
+  border-radius:999px;
+  border:1px solid #ffe3a3;
+  background:#fff6d8;
+  color:#8a5a00;
+}
+
+/* Badges row (NEW + social pills) */
+.badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+  align-items:center;
+}
+
+/* Empty state */
+.empty{
+  color:var(--muted);
+  text-align:center;
+  padding:24px 8px;
+}
+
+/* Loader */
+#loading{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:1.05em;
+  background:white;
+  padding:.8em 1.2em;
+  border:1px solid #ccc;
+  border-radius:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+/* Small screens */
+@media (max-width: 640px){
+  .toolbar-bottom{
+    flex-direction:row;
+    align-items:flex-start;
+  }
+  .sort{
+    margin-left:auto;
+  }
+}
+</style>
+
+<link rel="stylesheet" href="{{ '/assets/vendor/datatables-1.13.6.min.css' | relative_url }}">
+
+<script src="{{ '/assets/vendor/jquery-3.6.0.min.js' | relative_url }}" defer></script>
+<script src="{{ '/assets/vendor/datatables-1.13.6.min.js' | relative_url }}" defer></script>
+
+<script>
+;(function () {
+  // ---------- Utilities ----------
+  function readHashQuery() {
+    const raw = window.location.hash ? window.location.hash.slice(1) : '';
+    if (!raw) return '';
+    try { return decodeURIComponent(raw.replace(/\+/g, ' ')); } catch { return raw; }
+  }
+  function setHash(q) {
+    if (q && q.trim().length) history.replaceState(null, '', '#' + encodeURIComponent(q.trim()));
+    else history.replaceState(null, '', location.pathname + location.search);
+  }
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function toNumber(x) {
+    if (x === null || x === undefined) return 0;
+    if (typeof x === 'number') return x;
+    const n = String(x).replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+    return n ? Number(n[0]) : 0;
+  }
+  function fmtDate(tsMs){
+    if (!tsMs) return '';
+    return new Date(tsMs).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function compactNum(n){
+    n = toNumber(n);
+    if (!n) return '0';
+    const abs = Math.abs(n);
+    if (abs >= 1e9) return (n/1e9).toFixed(abs >= 1e10 ? 0 : 1).replace(/\.0$/, '') + 'b';
+    if (abs >= 1e6) return (n/1e6).toFixed(abs >= 1e7  ? 0 : 1).replace(/\.0$/, '') + 'm';
+    if (abs >= 1e3) return (n/1e3).toFixed(abs >= 1e4  ? 0 : 1).replace(/\.0$/, '') + 'k';
+    return String(Math.round(n));
+  }
+
+  // ---------- DOM refs ----------
+  const loadingEl = document.getElementById('loading');
+  const loadingTextEl = document.getElementById('loadingText');
+  const toolbarEl = document.getElementById('papersToolbar');
+  const inputEl   = document.getElementById('papersSearch');
+  const resetEl   = document.getElementById('resetPapersSearch');
+  const countEl   = document.getElementById('papersVisibleCount');
+  const gridEl    = document.getElementById('cardsGrid');
+  const emptyEl   = document.getElementById('emptyState');
+  const sortEl    = document.getElementById('sortSelect');
+  const loadMoreTrigger = document.getElementById('loadMoreTrigger');
+
+  let datatable;
+  const PAGE_CHUNK = 80;
+  let visibleLimit = PAGE_CHUNK;
+  let loadMoreObserver = null;
+
+  function setLoadingText(t){
+    if (loadingTextEl) loadingTextEl.textContent = t;
+  }
+
+  function updateVisibleCount(){
+    if (!datatable || !countEl) return;
+    const total = datatable.rows({ filter:'applied' }).count();
+    const shown = Math.min(visibleLimit, total);
+    countEl.textContent = `Showing ${shown} of ${total} papers`;
+  }
+
+  function renderCards(){
+    if (!datatable || !gridEl) return;
+
+    const rows = datatable.rows({ filter:'applied' }).data().toArray();
+    const total = rows.length;
+
+    gridEl.innerHTML = '';
+
+    if (!rows.length){
+      gridEl.style.display='none';
+      if (emptyEl) emptyEl.style.display='';
+      if (loadMoreTrigger) loadMoreTrigger.style.display = 'none';
+      updateVisibleCount();
+      return;
+    }
+
+    if (emptyEl) emptyEl.style.display='none';
+    gridEl.style.display='grid';
+
+    visibleLimit = Math.min(visibleLimit, total);
+
+    const now = Math.floor(Date.now()/1000);
+    const seven = 7*24*3600;
+    const slice = rows.slice(0, visibleLimit);
+
+    slice.forEach(r => {
+      // 0 titleHTML, 1 shortAuthors, 2 year, 3 citations, 4 hfLikes, 5 ghStars,
+      // 6 rawSearch, 7 addedTs, 8 isNew, 9 url, 10 allAuthors
+      const titleHTML   = r[0];
+      const shortAuth   = r[1] || '';
+      const year        = +r[2] || '';
+      const citations   = +r[3] || 0;
+      const hfLikes     = +r[4] || 0;
+      const ghStars     = +r[5] || 0;
+      const addedTs     = +r[7] || 0;
+      const isNew       = !!r[8];
+      const url         = r[9] || '';
+
+      const showNew = isNew || (addedTs && (now - addedTs <= seven));
+
+      const citePill = citations > 0 ? `<span class="signal" title="Citations">Cites ${compactNum(citations)}</span>` : '';
+      const hfPill   = hfLikes   > 0 ? `<span class="signal" title="Hugging Face likes">HF ${compactNum(hfLikes)} ♥</span>` : '';
+      const ghPill   = ghStars   > 0 ? `<span class="signal" title="GitHub stars">GH ${compactNum(ghStars)} ★</span>` : '';
+
+      const metaBits = [
+        `<span class="year" title="Year">${year || '—'}</span>`,
+        (addedTs ? `<time datetime="${new Date(addedTs*1000).toISOString()}" title="First added">${fmtDate(addedTs*1000)}</time>` : '')
+      ].filter(Boolean);
+
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="meta">
+          ${metaBits.map((x,i)=> i===0 ? x : `<span>•</span>${x}`).join('')}
+        </div>
+        <h3 class="title">${titleHTML}</h3>
+        <div class="authors">${escapeHtml(shortAuth || '—')}</div>
+        <div class="badges">
+          ${showNew ? '<strong class="badge-new">NEW</strong>' : ''}
+          ${citePill || ''}
+          ${hfPill || ''}
+          ${ghPill || ''}
+        </div>
+      `;
+
+      if (url){
+        const a = card.querySelector('.title a');
+        if (!a){
+          const h3 = card.querySelector('.title');
+          h3.innerHTML = `<a href="${url}">${escapeHtml(h3.textContent || '')}</a>`;
+        }
+      }
+
+      gridEl.appendChild(card);
+    });
+
+    if (loadMoreTrigger){
+      loadMoreTrigger.style.display = (visibleLimit < total) ? 'block' : 'none';
+    }
+
+    updateVisibleCount();
+  }
+
+  // ---------- Worker-backed indexing ----------
+  async function buildRowsViaWorker(){
+    const v = "{{ site.time | date: '%s' }}";
+    const base = "{{ site.baseurl }}";
+
+    const indexUrl    = `${base}/paper-index.json?v=${v}`;
+    const fallbackUrl = `${base}/paper-abstracts.json?v=${v}`;
+    const historyUrl  = `${base}/assets/paper-history.json?v=${v}`;
+
+    const workerSrc = "{{ '/public/js/papers-worker.js' | relative_url }}?v={{ site.time | date: '%s' }}";
+    const worker = new Worker(workerSrc);
+
+    return await new Promise((resolve, reject) => {
+      const cleanup = () => { try { worker.terminate(); } catch {} };
+
+      worker.onmessage = (evt) => {
+        const msg = evt.data || {};
+
+        if (msg.type === 'stage') {
+          setLoadingText(msg.text || 'Loading…');
+          return;
+        }
+        if (msg.type === 'progress') {
+          const pct = msg.total ? Math.floor((msg.i / msg.total) * 100) : 0;
+          setLoadingText(`Indexing publications… ${pct}%`);
+          return;
+        }
+        if (msg.type === 'done') {
+          cleanup();
+          resolve(msg.rows || []);
+          return;
+        }
+        if (msg.type === 'error') {
+          cleanup();
+          reject(new Error(msg.message || 'Worker failed'));
+          return;
+        }
+        if (Array.isArray(msg.rows)) {
+          cleanup();
+          resolve(msg.rows);
+          return;
+        }
+      };
+
+      worker.onerror = (err) => {
+        cleanup();
+        reject(err);
+      };
+
+      // Pass config values to worker
+      const siteConfig = window.SITE_CONFIG || {};
+      const newBadgeDays = siteConfig.features?.newBadgeDays || 7;
+
+      worker.postMessage({
+        indexUrl,
+        fallbackUrl,
+        historyUrl,
+        baseurl: base,
+        newBadgeDays
+      });
+    });
+  }
+
+  async function start(){
+    try{
+      const initialQuery = readHashQuery();
+      if (inputEl && initialQuery) inputEl.value = initialQuery;
+
+      setLoadingText('Loading publications…');
+
+      const rows = await buildRowsViaWorker();
+
+      setLoadingText('Rendering…');
+
+      if (!window.jQuery || !jQuery.fn || !jQuery.fn.DataTable) {
+        throw new Error('DataTables not loaded');
+      }
+
+      jQuery('#papers-table').DataTable({
+        data: rows,
+        columns: [
+          { title: "Title" },
+          { title: "Authors" },
+          { title: "Year" },
+          { title: "Citations" },
+          { title: "HF likes" },
+          { title: "GitHub stars" },
+          { title: "raw" },
+          { title: "added_ts" },
+          { title: "is_new" },
+          { title: "url" },
+          { title: "all_authors" }
+        ],
+        responsive: { details: false },
+        autoWidth: false,
+        paging: false,
+        searching: true,
+        info: false,
+        dom: 't',
+        deferRender: true,
+        order: [[2,'desc'], [3,'desc']],
+        columnDefs: [
+          { targets: [7,8,9], visible: false, searchable: false },
+          { targets: [6,10], visible: false, searchable: true },
+          { targets: [2,3,4,5], type: 'num' }
+        ],
+        initComplete: function(){
+          datatable = this.api();
+
+          if (loadingEl) loadingEl.style.display='none';
+          if (toolbarEl) toolbarEl.style.display='';
+          if (gridEl) gridEl.style.display='grid';
+
+          if (initialQuery) datatable.search(initialQuery).draw();
+
+          renderCards();
+          datatable.on('draw', renderCards);
+
+          if ('IntersectionObserver' in window && loadMoreTrigger){
+            loadMoreObserver = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const total = datatable.rows({ filter:'applied' }).count();
+                if (visibleLimit < total) {
+                  visibleLimit += PAGE_CHUNK;
+                  renderCards();
+                }
+              });
+            }, { rootMargin: '200px 0px' });
+
+            loadMoreObserver.observe(loadMoreTrigger);
+          }
+
+          const debounce = (fn, ms=120) => {
+            let t;
+            return (...a) => {
+              clearTimeout(t);
+              t = setTimeout(() => fn(...a), ms);
+            };
+          };
+
+          const apply = debounce(() => {
+            const q = inputEl ? (inputEl.value || '') : '';
+            visibleLimit = PAGE_CHUNK;
+            datatable.search(q).draw(false);
+            setHash(q);
+          }, 120);
+
+          if (inputEl) {
+            inputEl.addEventListener('input', apply);
+            inputEl.addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); apply(); }});
+          }
+
+          if (resetEl) {
+            resetEl.addEventListener('click', () => {
+              if (inputEl) inputEl.value = '';
+              visibleLimit = PAGE_CHUNK;
+              datatable.search('').draw(false);
+              setHash('');
+              if (inputEl) inputEl.focus();
+            });
+          }
+
+          window.addEventListener('hashchange', () => {
+            const q = readHashQuery();
+            if (inputEl) inputEl.value = q;
+            visibleLimit = PAGE_CHUNK;
+            datatable.search(q).draw(false);
+          });
+
+          document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+              e.preventDefault();
+              if (inputEl) inputEl.focus();
+            } else if (e.key === 'Escape') {
+              if (inputEl) inputEl.value='';
+              visibleLimit = PAGE_CHUNK;
+              datatable.search('').draw();
+              setHash('');
+            }
+          });
+
+          if (sortEl) {
+            const applySort = (mode) => {
+              switch (mode) {
+                case 'year_desc':   datatable.order([[2, 'desc'], [3, 'desc']]).draw(false); break;
+                case 'year_asc':    datatable.order([[2, 'asc'],  [3, 'desc']]).draw(false); break;
+                case 'cites_desc':  datatable.order([[3, 'desc'], [2, 'desc']]).draw(false); break;
+                case 'cites_asc':   datatable.order([[3, 'asc'],  [2, 'desc']]).draw(false); break;
+                case 'hf_desc':     datatable.order([[4, 'desc'], [3, 'desc'], [2, 'desc']]).draw(false); break;
+                case 'hf_asc':      datatable.order([[4, 'asc'],  [3, 'desc'], [2, 'desc']]).draw(false); break;
+                case 'gh_desc':     datatable.order([[5, 'desc'], [3, 'desc'], [2, 'desc']]).draw(false); break;
+                case 'gh_asc':      datatable.order([[5, 'asc'],  [3, 'desc'], [2, 'desc']]).draw(false); break;
+                case 'default':
+                default:            datatable.order([[8,'desc'], [7,'desc'], [2,'desc'], [3,'desc']]).draw(false); break;
+              }
+            };
+
+            sortEl.value = 'default';
+            applySort('default');
+
+            sortEl.addEventListener('change', () => {
+              visibleLimit = PAGE_CHUNK;
+              applySort(sortEl.value);
+            });
+          }
+
+          setTimeout(() => datatable.columns.adjust().draw(false), 60);
+        }
+      });
+
+    } catch (err){
+      console.error(err);
+      if (loadingEl) loadingEl.innerHTML = '<p style="color:#b00020">Sorry, failed to load publications.</p>';
+    }
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', start, { once:true });
+  } else {
+    start();
+  }
+})();
+</script>
